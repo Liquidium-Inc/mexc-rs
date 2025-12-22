@@ -10,6 +10,7 @@ pub mod cancel_order;
 pub mod create_user_data_stream;
 pub mod default_symbols;
 pub mod depth;
+pub mod deposit_address;
 pub mod enums;
 pub mod exchange_information;
 pub mod get_open_orders;
@@ -22,6 +23,7 @@ pub mod ping;
 pub mod query_order;
 pub mod time;
 pub mod trades;
+pub mod withdraw;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
