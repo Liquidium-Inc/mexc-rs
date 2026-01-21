@@ -58,7 +58,10 @@ impl GetOrderEndpoint for MexcSpotApiClientWithAuthentication {
             .query(&query_with_signature)
             .send()
             .await?;
-        let api_response = response.json::<ApiResponse<Order>>().await?;
+        let status = response.status();
+        let body = response.text().await?;
+        println!("MEXC get_order raw status={status}, body={body}");
+        let api_response = serde_json::from_str::<ApiResponse<Order>>(&body)?;
         let output = api_response.into_api_result()?;
 
         Ok(output)

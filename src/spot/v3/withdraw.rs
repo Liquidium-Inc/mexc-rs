@@ -142,6 +142,7 @@ impl WithdrawEndpoint for MexcSpotApiClientWithAuthentication {
             // Try to parse the real MEXC error
             let err =
                 serde_json::from_str::<ErrorResponse>(&body).unwrap_or_else(|_| ErrorResponse {
+                    raw_code: 999,
                     code: ErrorCode::InternalError,
                     _extend: None,
                     msg: format!("HTTP {status}, body: {body}"),

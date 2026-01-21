@@ -57,7 +57,7 @@ fn collect_proto_files(dir: &Path) -> std::io::Result<Vec<PathBuf>> {
         if path.is_dir() {
             let next = collect_proto_files(&path)?;
             out.extend(next);
-        } else if path.extension().map_or(false, |ext| ext == "proto") {
+        } else if path.extension().is_some_and(|ext| ext == "proto") {
             out.push(path);
         }
     }

@@ -1,6 +1,8 @@
 use crate::spot::SignQueryError;
 use num_traits::FromPrimitive;
 use reqwest::StatusCode;
+use serde::de::{self, Visitor};
+use serde::{Deserialize, Deserializer};
 use std::fmt::{Display, Formatter};
 
 pub mod account_information;
@@ -102,6 +104,7 @@ impl<T> ApiResponse<T> {
                 Err(esc.try_into().map_err(|_err| ErrorResponse {
                     msg: "Stringified error code cannot be parsed".to_string(),
                     code: ErrorCode::InvalidResponse,
+                    raw_code: ErrorCode::InvalidResponse as i32,
                     _extend: None,
                 })?)
             }
@@ -117,6 +120,7 @@ impl<T> ApiResponse<T> {
                     ErrorResponse {
                         msg: "Stringified error code cannot be parsed".to_string(),
                         code: ErrorCode::InvalidResponse,
+                        raw_code: ErrorCode::InvalidResponse as i32,
                         _extend: None,
                     }
                 })?))
@@ -125,11 +129,47 @@ impl<T> ApiResponse<T> {
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug)]
 pub struct ErrorResponse {
     pub code: ErrorCode,
+    pub raw_code: i32,
     pub msg: String,
     pub _extend: Option<serde_json::Value>,
+}
+
+impl<'de> Deserialize<'de> for ErrorResponse {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Helper {
+            code: serde_json::Value,
+            msg: String,
+            _extend: Option<serde_json::Value>,
+        }
+
+        let helper = Helper::deserialize(deserializer)?;
+        let raw_code = match helper.code {
+            serde_json::Value::Number(value) => value
+                .as_i64()
+                .and_then(|value| i32::try_from(value).ok())
+                .ok_or_else(|| de::Error::custom("invalid numeric error code"))?,
+            serde_json::Value::String(value) => value
+                .parse::<i32>()
+                .map_err(|_| de::Error::custom("invalid string error code"))?,
+            _ => return Err(de::Error::custom("unsupported error code type")),
+        };
+
+        let code = ErrorCode::from_i32(raw_code).unwrap_or(ErrorCode::InvalidResponse);
+
+        Ok(Self {
+            code,
+            raw_code,
+            msg: helper.msg,
+            _extend: helper._extend,
+        })
+    }
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -143,21 +183,74 @@ impl TryFrom<ErrorResponseStringifiedCode> for ErrorResponse {
     type Error = ();
 
     fn try_from(value: ErrorResponseStringifiedCode) -> Result<Self, Self::Error> {
-        let code = match value.code.parse::<i32>() {
+        let raw_code = match value.code.parse::<i32>() {
             Ok(code) => code,
             Err(_) => return Err(()),
         };
-        let code = match ErrorCode::from_i32(code) {
+        let code = match ErrorCode::from_i32(raw_code) {
             Some(code) => code,
             None => return Err(()),
         };
 
         Ok(Self {
             code,
+            raw_code,
             msg: value.msg,
             _extend: value._extend,
         })
     }
+}
+
+pub fn deserialize_string_from_number<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    struct StringOrNumberVisitor;
+
+    impl<'de> Visitor<'de> for StringOrNumberVisitor {
+        type Value = String;
+
+        fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
+            formatter.write_str("a string or number")
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(value.to_string())
+        }
+
+        fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(value)
+        }
+
+        fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(value.to_string())
+        }
+
+        fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(value.to_string())
+        }
+
+        fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(value.to_string())
+        }
+    }
+
+    deserializer.deserialize_any(StringOrNumberVisitor)
 }
 
 #[derive(
@@ -280,7 +373,11 @@ impl std::error::Error for ErrorCode {}
 
 impl Display for ErrorResponse {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Error {}: {}", self.code, self.msg)?;
+        if ErrorCode::from_i32(self.raw_code).is_some() {
+            write!(f, "Error {}: {}", self.code, self.msg)?;
+        } else {
+            write!(f, "Error {} (raw={}): {}", self.code, self.raw_code, self.msg)?;
+        }
         if let Some(extend) = &self._extend {
             write!(f, " (extend: {:?})", extend)?;
         }

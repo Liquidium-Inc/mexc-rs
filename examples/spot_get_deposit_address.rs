@@ -4,7 +4,9 @@ use mexc_rs::spot::{MexcSpotApiClient, MexcSpotApiEndpoint};
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
-    tracing_subscriber::fmt::init();
+    if cfg!(debug_assertions) {
+        tracing_subscriber::fmt::init();
+    }
 
     let api_key = std::env::var("MEXC_API_KEY").expect("MEXC_API_KEY not set");
     let secret_key = std::env::var("MEXC_SECRET_KEY").expect("MEXC_SECRET_KEY not set");
@@ -19,36 +21,36 @@ async fn main() {
 
     match result {
         Ok(addresses) => {
-            println!("Deposit addresses for USDT:");
+            tracing::info!("Deposit addresses for USDT:");
             for address in addresses {
-                println!(
+                tracing::info!(
                     "  Network: {}, Address: {}, Memo: {:?}",
                     address.network, address.address, address.memo
                 );
             }
         }
         Err(e) => {
-            eprintln!("Error: {:?}", e);
+            tracing::error!("Error: {:?}", e);
         }
     }
 
     // Get deposit address for USDT on TRC20 network
     let result = client
-        .get_deposit_address("USDT".to_string(), Some("TRC20".to_string()))
+        .get_deposit_address("USDT".to_string(), Some(&"TRC20".to_string()))
         .await;
 
     match result {
         Ok(addresses) => {
-            println!("\nDeposit address for USDT on TRC20:");
+            tracing::info!("\nDeposit address for USDT on TRC20:");
             for address in addresses {
-                println!(
+                tracing::info!(
                     "  Network: {}, Address: {}, Memo: {:?}",
                     address.network, address.address, address.memo
                 );
             }
         }
         Err(e) => {
-            eprintln!("Error: {:?}", e);
+            tracing::error!("Error: {:?}", e);
         }
     }
 }

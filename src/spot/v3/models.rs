@@ -6,6 +6,7 @@ use rust_decimal::Decimal;
 #[serde(rename_all = "camelCase")]
 pub struct Order {
     pub symbol: String,
+    #[serde(deserialize_with = "crate::spot::v3::deserialize_string_from_number")]
     pub order_id: String,
     pub client_order_id: Option<String>,
     pub price: Decimal,

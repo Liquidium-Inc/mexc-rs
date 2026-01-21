@@ -58,6 +58,7 @@ impl<'a> From<OrderParams<'a>> for OrderQuery<'a> {
 #[serde(rename_all = "camelCase")]
 pub struct OrderOutput {
     pub symbol: String,
+    #[serde(deserialize_with = "crate::spot::v3::deserialize_string_from_number")]
     pub order_id: String,
     pub order_list_id: Option<i32>,
     pub price: Decimal,
@@ -90,8 +91,10 @@ impl OrderEndpoint for MexcSpotApiClientWithAuthentication {
             .send()
             .await?;
 
-        println!("{:?} ", response);
-        let api_response = response.json::<ApiResponse<OrderOutput>>().await?;
+        let status = response.status();
+        let body = response.text().await?;
+        println!("MEXC order raw status={status}, body={body}");
+        let api_response = serde_json::from_str::<ApiResponse<OrderOutput>>(&body)?;
         let output = api_response.into_api_result()?;
 
         Ok(output)

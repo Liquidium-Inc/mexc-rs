@@ -52,9 +52,7 @@ impl DepositAddressEndpoint for MexcSpotApiClientWithAuthentication {
             .query(&query)
             .send()
             .await?;
-        let api_response = response
-            .json::<ApiResponse<Vec<DepositAddress>>>()
-            .await?;
+        let api_response = response.json::<ApiResponse<Vec<DepositAddress>>>().await?;
         let output = api_response.into_api_result()?;
 
         Ok(output)
@@ -76,7 +74,7 @@ mod tests {
     async fn test_get_deposit_address_with_network() {
         let client = MexcSpotApiClientWithAuthentication::new_for_test();
         let result = client
-            .get_deposit_address("USDT".to_string(), Some("TRC20".to_string()))
+            .get_deposit_address("USDT".to_string(), Some("TRC20"))
             .await;
         assert!(result.is_ok());
     }
