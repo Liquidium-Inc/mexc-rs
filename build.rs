@@ -15,6 +15,9 @@ fn main() {
 
     let ws_proto_dir = MANIFEST_DIR.join(WS_PROTO_SUB_NAME);
 
+    let protoc = protobuf_src::protoc();
+    env::set_var("PROTOC", &protoc);
+
     if !ws_proto_dir.exists() {
         run_command_checked("git", &["submodule", "init", WS_PROTO_SUB_NAME]);
         run_command_checked("git", &["submodule", "update", WS_PROTO_SUB_NAME]);
