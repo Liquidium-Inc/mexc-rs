@@ -136,8 +136,6 @@ impl WithdrawEndpoint for MexcSpotApiClientWithAuthentication {
         let status = response.status();
         let body = response.text().await?;
 
-        println!("MEXC withdraw raw status={status}, body={body}");
-
         if !status.is_success() {
             // Try to parse the real MEXC error
             let err =

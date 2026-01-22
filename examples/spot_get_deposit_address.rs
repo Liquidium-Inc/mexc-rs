@@ -15,9 +15,7 @@ async fn main() {
         .into_with_authentication(api_key, secret_key);
 
     // Get all deposit addresses for USDT
-    let result = client
-        .get_deposit_address("USDT".to_string(), None)
-        .await;
+    let result = client.get_deposit_address("USDT".to_string(), None).await;
 
     match result {
         Ok(addresses) => {
@@ -25,7 +23,9 @@ async fn main() {
             for address in addresses {
                 tracing::info!(
                     "  Network: {}, Address: {}, Memo: {:?}",
-                    address.network, address.address, address.memo
+                    address.network,
+                    address.address,
+                    address.memo
                 );
             }
         }
@@ -36,7 +36,7 @@ async fn main() {
 
     // Get deposit address for USDT on TRC20 network
     let result = client
-        .get_deposit_address("USDT".to_string(), Some(&"TRC20".to_string()))
+        .get_deposit_address("USDT".to_string(), Some("TRC20"))
         .await;
 
     match result {
@@ -45,7 +45,9 @@ async fn main() {
             for address in addresses {
                 tracing::info!(
                     "  Network: {}, Address: {}, Memo: {:?}",
-                    address.network, address.address, address.memo
+                    address.network,
+                    address.address,
+                    address.memo
                 );
             }
         }

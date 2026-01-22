@@ -42,7 +42,7 @@ pub enum Message {
 
 impl Message {
     pub fn from_proto(data: &[u8]) -> Result<Message, ()> {
-        let wrapper = PushDataV3ApiWrapper::decode(data).or_else(|_| Err(()))?;
+        let wrapper = PushDataV3ApiWrapper::decode(data).map_err(|_| ())?;
         let Some(body) = wrapper.body else {
             return Err(());
         };

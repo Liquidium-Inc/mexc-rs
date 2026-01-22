@@ -3,6 +3,7 @@ use crate::spot::v3::{ApiResponse, ApiResult};
 use crate::spot::MexcSpotApiClientWithAuthentication;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use reqwest::StatusCode;
 use rust_decimal::Decimal;
 
 #[derive(Debug)]
@@ -93,7 +94,9 @@ impl OrderEndpoint for MexcSpotApiClientWithAuthentication {
 
         let status = response.status();
         let body = response.text().await?;
-        println!("MEXC order raw status={status}, body={body}");
+        if status != StatusCode::OK {
+            println!("MEXC order raw status={status}, body={body}");
+        }
         let api_response = serde_json::from_str::<ApiResponse<OrderOutput>>(&body)?;
         let output = api_response.into_api_result()?;
 
