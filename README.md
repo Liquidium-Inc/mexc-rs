@@ -55,6 +55,17 @@ async fn main() -> anyhow::Result<()> {
 
 More examples are available in the `examples/` directory.
 
+## Protobuf generation
+
+The websocket protobuf Rust types are checked in at `src/proto/mod.rs`. If you update
+the `.proto` files under `websocket-proto/`, regenerate them with:
+
+```bash
+./scripts/gen-proto.sh
+```
+
+The script uses a vendored `protoc` via `protobuf-src`, so no system install is required.
+
 ## Testing
 
 Testing all the inputs of the API is somewhat dangerous : the API is real and deals with real orders.

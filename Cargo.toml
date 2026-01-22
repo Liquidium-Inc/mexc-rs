@@ -48,9 +48,3 @@ async-channel = "1.9.0"
 serde_with = "3.1.0"
 uuid = { version = "1.4.1", features = ["v4"] }
 prost = "0.13.5"
-tonic = "0.12.2"
-
-[build-dependencies]
-protobuf-src = "1"
-prost-build = "0.13.5"
-tonic-build = "0.12.2"
