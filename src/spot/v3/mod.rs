@@ -253,6 +253,33 @@ where
     deserializer.deserialize_any(StringOrNumberVisitor)
 }
 
+pub fn deserialize_option_i32_from_string_or_number<'de, D>(
+    deserializer: D,
+) -> Result<Option<i32>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = Option::<serde_json::Value>::deserialize(deserializer)?;
+
+    match value {
+        None | Some(serde_json::Value::Null) => Ok(None),
+        Some(serde_json::Value::Number(number)) => {
+            let value = number
+                .as_i64()
+                .and_then(|value| i32::try_from(value).ok())
+                .ok_or_else(|| de::Error::custom("invalid numeric i32 value"))?;
+            Ok(Some(value))
+        }
+        Some(serde_json::Value::String(value)) => {
+            let parsed = value
+                .parse::<i32>()
+                .map_err(|_| de::Error::custom("invalid string i32 value"))?;
+            Ok(Some(parsed))
+        }
+        _ => Err(de::Error::custom("expected null, number, or numeric string")),
+    }
+}
+
 #[derive(
     Debug,
     PartialEq,
